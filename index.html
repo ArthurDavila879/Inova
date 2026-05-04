@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VilaVerde</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body>
+
+<!-- ========== TOAST CONTAINER ========== -->
+<div id="toast-container"></div>
+
+<!-- ========== MODAL OVERLAY ========== -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal" id="proposal-modal"></div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: LOGIN                                       -->
+<!-- ================================================ -->
+<div id="page-login" class="page active">
+  <div class="login-visual">
+    <div class="floating-cards">
+      <div class="float-card">🌡️ -5°C com arborização</div>
+      <div class="float-card">🌳 1.200 árvores plantadas</div>
+      <div class="float-card">💚 847 propostas aprovadas</div>
+      <div class="float-card">🏙️ 32 cidades participando</div>
+    </div>
+    <div class="login-visual-content">
+      <div class="big-icon">🌿</div>
+      <h1>Verde pra<br/>Todo Mundo</h1>
+      <p>Plataforma colaborativa para mapear, propor e votar em projetos de arborização urbana. Juntos pelo clima da nossa cidade.</p>
+      <div class="login-stats">
+        <div class="stat-item"><div class="stat-number" data-target="2341">0</div><div class="stat-label">Propostas</div></div>
+        <div class="stat-item"><div class="stat-number" data-target="18400">0</div><div class="stat-label">Votos</div></div>
+        <div class="stat-item"><div class="stat-number" data-target="847">0</div><div class="stat-label">Aprovadas</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-form-side">
+    <div class="login-logo">
+      <span>🌱</span>
+      <span>VilaVerde</span>
+      <div class="login-logo-dot" style="width:8px;height:8px;background:var(--leaf);border-radius:50%;margin-left:4px"></div>
+    </div>
+
+    <h1 class="login-title">Bem-vindo de<br/>volta! 👋</h1>
+    <p class="login-sub">Acesse sua conta ou crie uma nova gratuitamente</p>
+
+    <div class="login-form">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">Entrar</button>
+        <button class="tab-btn" data-tab="register">Criar conta</button>
+      </div>
+
+      <!-- LOGIN PANEL -->
+      <div class="form-panel active" id="panel-login">
+        <div class="social-login">
+          <button class="social-btn" onclick="showToast('Login com Google em breve!','warning','🔜')">
+            <span>🌐</span> Google
+          </button>
+          <button class="social-btn" onclick="showToast('Login com Facebook em breve!','warning','🔜')">
+            <span>📘</span> Facebook
+          </button>
+        </div>
+        <div class="divider">ou com email</div>
+
+        <form onsubmit="login(event)">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="login-email" placeholder="seu@email.com" value="joao@serra.es.br" />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <div class="password-toggle">
+              <input type="password" id="login-pass" placeholder="Sua senha" value="123456" />
+              <button type="button" class="toggle-eye">👁️</button>
+            </div>
+          </div>
+          <a href="#" class="forgot-link">Esqueceu a senha?</a>
+          <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
+            Entrar na plataforma →
+          </button>
+          <p class="terms-text">Ao entrar, você concorda com nossos <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.</p>
+        </form>
+      </div>
+
+      <!-- REGISTER PANEL -->
+      <div class="form-panel" id="panel-register">
+        <form onsubmit="register(event)">
+          <div class="form-group">
+            <label>Nome completo</label>
+            <input type="text" id="reg-name" placeholder="Seu nome" />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="reg-email" placeholder="seu@email.com" />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <div class="password-toggle">
+              <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" />
+              <button type="button" class="toggle-eye">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-leaf btn-lg" id="reg-btn" style="width:100%">
+            🌱 Criar minha conta
+          </button>
+          <p class="terms-text">Ao criar sua conta, você concorda com nossos <a href="#">Termos de Uso</a>.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: LOCATION SETUP                             -->
+<!-- ================================================ -->
+<div id="page-location-setup" class="page">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--green-deep),var(--green-mid));padding:40px 20px">
+    <div style="background:white;border-radius:32px;padding:48px;max-width:540px;width:100%;box-shadow:var(--shadow-lg)">
+      <div style="text-align:center;margin-bottom:40px">
+        <div style="font-size:64px;margin-bottom:16px">📍</div>
+        <h1 style="font-family:var(--font-display);font-size:30px;color:var(--green-deep);margin-bottom:8px">Onde você mora?</h1>
+        <p style="color:var(--muted);line-height:1.5">Precisamos saber sua localização para mostrar as propostas do seu bairro e conectar você à sua comunidade.</p>
+      </div>
+
+      <div class="location-steps">
+        <div class="step-item done"><div class="step-circle">✓</div><div class="step-label">Conta</div></div>
+        <div class="step-item active"><div class="step-circle">2</div><div class="step-label">Localização</div></div>
+        <div class="step-item"><div class="step-circle">3</div><div class="step-label">Explorar</div></div>
+      </div>
+
+      <div class="form-group">
+        <label>CEP (busca automática)</label>
+        <input type="text" id="loc-cep" placeholder="00000-000" maxlength="9"
+          oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2')" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Bairro *</label>
+          <input type="text" id="loc-bairro" placeholder="Seu bairro" />
+        </div>
+        <div class="form-group">
+          <label>Cidade *</label>
+          <input type="text" id="loc-cidade" placeholder="Sua cidade" value="Serra" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select>
+          <option value="ES" selected>Espírito Santo</option>
+          <option value="RJ">Rio de Janeiro</option>
+          <option value="SP">São Paulo</option>
+          <option value="MG">Minas Gerais</option>
+        </select>
+      </div>
+
+      <div style="background:var(--sky);border-radius:var(--radius-sm);padding:16px;margin-bottom:24px;font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:18px;flex-shrink:0">🔒</span>
+        <span>Sua localização é usada apenas para mostrar propostas do seu bairro. Nunca compartilhamos seus dados pessoais.</span>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="saveLocation()" style="width:100%">
+        Continuar para o app →
+      </button>
+      <button class="btn btn-ghost" onclick="App.user.bairro='Serra Centro';goTo('dashboard')"
+        style="width:100%;margin-top:10px;background:transparent;color:var(--muted);border:none;font-size:13px;cursor:pointer">
+        Pular por enquanto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- NAVBAR (shared, shown after login)               -->
+<!-- ================================================ -->
+<nav class="navbar hidden" id="main-navbar">
+  <a class="navbar-brand" href="#">
+    <div class="logo-icon">🌱</div>
+    <span>VilaVerde</span>
+  </a>
+  <div class="navbar-nav">
+    <button class="nav-btn active" data-page="dashboard" onclick="goTo('dashboard')">🏠 <span>Início</span></button>
+    <button class="nav-btn" data-page="nova-proposta" onclick="goTo('nova-proposta')">➕ <span>Nova Proposta</span></button>
+    <button class="nav-btn" data-page="votacao" onclick="goTo('votacao')">🗳️ <span>Votação</span></button>
+    <button class="nav-btn" data-page="perfil" onclick="goTo('perfil')">👤 <span>Perfil</span></button>
+  </div>
+  <div class="navbar-user">
+    <div class="location-badge">📍 <span id="nav-location">Serra, ES</span></div>
+    <div class="user-avatar" onclick="goTo('perfil')" title="Meu Perfil">?</div>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<!-- ================================================ -->
+<!-- PAGE: DASHBOARD                                  -->
+<!-- ================================================ -->
+<div id="page-dashboard" class="page">
+  <div class="page-header">
+    <div class="header-wave-decor">🌳</div>
+    <h1 id="dashboard-greeting">Olá! 🌱</h1>
+    <p>Explore e vote nas propostas de arborização da sua cidade</p>
+  </div>
+
+  <div class="page-content">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon green">🌳</div>
+        <div class="stat-info"><div class="value">1.247</div><div class="label">Árvores propostas</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">🌡️</div>
+        <div class="stat-info"><div class="value">-3,8°C</div><div class="label">Redução média estimada</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🗳️</div>
+        <div class="stat-info"><div class="value">18.423</div><div class="label">Votos registrados</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon earth">🏛️</div>
+        <div class="stat-info"><div class="value">12</div><div class="label">Enviadas ao governo</div></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="section-header" style="margin-bottom:16px">
+      <h2 class="section-title">Propostas da Comunidade</h2>
+      <button class="btn btn-leaf" onclick="goTo('nova-proposta')">➕ Nova Proposta</button>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:24px">
+      <button class="filter-chip active" data-filter="status" data-value="all">Todas</button>
+      <button class="filter-chip" data-filter="status" data-value="votacao">Em Votação</button>
+      <button class="filter-chip" data-filter="status" data-value="aprovada">Aprovadas</button>
+      <button class="filter-chip" data-filter="status" data-value="analise">Em Análise</button>
+    </div>
+
+    <div class="proposals-grid" id="proposals-grid"></div>
+
+    <!-- IMPACT BANNER -->
+    <div style="background:linear-gradient(135deg,var(--green-deep),var(--green-mid));border-radius:var(--radius);padding:32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div>
+        <h3 style="font-family:var(--font-display);color:white;font-size:22px;margin-bottom:8px">📨 Próxima remessa ao governo</h3>
+        <p style="color:rgba(255,255,255,0.75);font-size:14px">Propostas com +500 votos são enviadas automaticamente à Prefeitura com relatório completo da IA.</p>
+      </div>
+      <div style="text-align:center;background:rgba(255,255,255,0.12);border-radius:16px;padding:20px 32px">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:900;color:var(--leaf)">421</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6)">votos na proposta líder</div>
+        <div style="font-size:12px;color:var(--leaf);margin-top:4px">79 votos p/ a meta! 🎯</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: NOVA PROPOSTA                              -->
+<!-- ================================================ -->
+<div id="page-nova-proposta" class="page">
+  <div class="page-header">
+    <div class="header-wave-decor">✍️</div>
+    <h1>Nova Proposta</h1>
+    <p>Mapeie um local e envie sua proposta para a comunidade votar</p>
+  </div>
+
+  <div class="nova-proposta-layout">
+    <!-- MAIN FORM -->
+    <div>
+      <form id="prop-form" onsubmit="submitProposal(event)">
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--green-deep);margin-bottom:20px;font-size:18px">📋 Dados da Proposta</h3>
+
+          <div class="form-group">
+            <label>Título da proposta *</label>
+            <input type="text" id="prop-title" placeholder="Ex: Arborização da Av. das Rosas" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="form-group">
+              <label>Bairro *</label>
+              <input type="text" id="prop-bairro" placeholder="Nome do bairro" value="" />
+            </div>
+            <div class="form-group">
+              <label>Tipo de área</label>
+              <select id="prop-tipo">
+                <option value="calcada">Calçada / Rua</option>
+                <option value="praca">Praça / Parque</option>
+                <option value="escola">Escola / Equipamento público</option>
+                <option value="via">Via expressa / Avenida</option>
+                <option value="rio">Margem de rio / Área verde</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Descrição detalhada *</label>
+            <textarea id="prop-desc" placeholder="Descreva o problema (calor excessivo, falta de sombra...) e como a arborização pode ajudar. Quanto mais detalhes, melhor!"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Endereço aproximado</label>
+            <input type="text" id="prop-address" placeholder="Rua, número, referência..." />
+          </div>
+        </div>
+
+        <!-- PHOTO UPLOAD -->
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--green-deep);margin-bottom:20px;font-size:18px">📸 Fotos do Local</h3>
+          <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+            <div class="upload-icon">📷</div>
+            <strong>Arraste as fotos ou clique para selecionar</strong>
+            <p>JPG, PNG, WEBP até 10MB cada · Máximo 6 fotos</p>
+          </div>
+          <input type="file" id="file-input" multiple accept="image/*" style="display:none"
+            onchange="handlePhotoUpload(this.files)" />
+          <div class="photos-preview" id="photos-preview"></div>
+        </div>
+
+        <!-- MAP PICKER -->
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--green-deep);margin-bottom:20px;font-size:18px">🗺️ Marque o Local no Mapa</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Clique no mapa para fixar o ponto exato da proposta</p>
+          <div class="map-picker" id="map-picker">
+            <div id="map-placeholder" class="map-placeholder">
+              <span class="icon">🗺️</span>
+              <span>Clique aqui para marcar<br/>o local da proposta</span>
+            </div>
+            <div id="map-pin" class="map-pin" style="display:none">📍</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--sky);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted)">
+              🌡️ Temperatura atual na área: <strong style="color:var(--dark)">35,2°C</strong>
+            </div>
+            <div style="background:var(--sky);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted)">
+              🌳 Índice de verde atual: <strong style="color:#c0392b">4,2%</strong> (baixo)
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">
+          🌱 Enviar Proposta para a Comunidade
+        </button>
+      </form>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div>
+      <!-- IA ANALYSIS -->
+      <div class="sidebar-panel" style="margin-bottom:20px">
+        <h3 class="sidebar-panel-title">🤖 Análise da IA</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5">
+          Preencha o título, bairro e tipo de área para a IA calcular automaticamente o custo, número de árvores e redução de temperatura estimada.
+        </p>
+        <button class="btn btn-primary" style="width:100%" onclick="runIaAnalysis()">
+          ⚡ Analisar com IA
+        </button>
+      </div>
+
+      <div id="ia-analysis-panel" style="display:none;margin-bottom:20px"></div>
+
+      <!-- TIPS -->
+      <div class="sidebar-panel" style="background:var(--sky)">
+        <h3 class="sidebar-panel-title">💡 Dicas para uma boa proposta</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>📸</span><span>Fotos claras do local aumentam em 3x as chances de aprovação</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>🌡️</span><span>Mencione a temperatura sentida e o impacto no dia a dia das pessoas</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>👥</span><span>Propostas em locais de uso coletivo (escolas, praças) recebem mais votos</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>🏛️</span><span>Com 500 votos, sua proposta vai direto para a Prefeitura com relatório da IA!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: VOTAÇÃO                                    -->
+<!-- ================================================ -->
+<div id="page-votacao" class="page">
+  <div class="page-header">
+    <div class="header-wave-decor">🗳️</div>
+    <h1>Ranking de Propostas</h1>
+    <p>As mais votadas vão para o governo. Vote e faça a diferença!</p>
+  </div>
+
+  <div class="votacao-layout">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:28px;flex-wrap:wrap">
+      <div style="background:linear-gradient(135deg,var(--green-bright),var(--leaf));border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;display:flex;align-items:center;gap:16px">
+        <span style="font-size:36px">🎯</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:white">500 votos</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.8)">Meta para ir ao governo</div>
+        </div>
+      </div>
+      <div style="background:white;border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px">
+        <span style="font-size:36px">📨</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--green-deep)">12</div>
+          <div style="font-size:13px;color:var(--muted)">Propostas enviadas</div>
+        </div>
+      </div>
+      <div style="background:white;border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px">
+        <span style="font-size:36px">⏰</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--sun)">3</div>
+          <div style="font-size:13px;color:var(--muted)">Quase na meta!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2 class="section-title">🏆 Ranking Geral</h2>
+      <div style="font-size:13px;color:var(--muted)">Atualizado em tempo real</div>
+    </div>
+
+    <div class="ranking-list" id="ranking-list"></div>
+
+    <!-- HOW IT WORKS -->
+    <div style="margin-top:40px;background:linear-gradient(135deg,var(--green-deep),var(--green-mid));border-radius:var(--radius);padding:32px;color:white">
+      <h3 style="font-family:var(--font-display);font-size:22px;margin-bottom:20px">Como funciona o processo?</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-size:36px;margin-bottom:10px">📝</div>
+          <div style="font-weight:600;margin-bottom:6px">1. Proposta</div>
+          <div style="font-size:13px;opacity:0.7">Cidadão mapeia e descreve a área</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-size:36px;margin-bottom:10px">🤖</div>
+          <div style="font-weight:600;margin-bottom:6px">2. Análise IA</div>
+          <div style="font-size:13px;opacity:0.7">IA calcula custo, espécies e impacto</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-size:36px;margin-bottom:10px">🗳️</div>
+          <div style="font-weight:600;margin-bottom:6px">3. Votação</div>
+          <div style="font-size:13px;opacity:0.7">Comunidade vota e prioriza</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-size:36px;margin-bottom:10px">🏛️</div>
+          <div style="font-weight:600;margin-bottom:6px">4. Governo</div>
+          <div style="font-size:13px;opacity:0.7">Relatório enviado automaticamente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: PERFIL                                     -->
+<!-- ================================================ -->
+<div id="page-perfil" class="page">
+  <div class="page-header">
+    <div class="header-wave-decor">👤</div>
+    <h1>Meu Perfil</h1>
+    <p>Gerencie seus dados e veja suas contribuições</p>
+  </div>
+
+  <div class="perfil-layout">
+    <div class="perfil-header">
+      <div class="perfil-avatar" id="perfil-initials">?</div>
+      <div class="perfil-info">
+        <h2 id="perfil-name">Carregando...</h2>
+        <p id="perfil-email" style="color:var(--muted)"></p>
+        <p id="perfil-location" style="color:var(--muted);margin-top:4px"></p>
+        <div class="perfil-badges" style="margin-top:12px">
+          <span class="badge badge-green">🌱 Cidadão Verde</span>
+          <span class="badge badge-blue">🗳️ <span id="perfil-votes">0</span> votos dados</span>
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-outline" onclick="showToast('Edição de perfil em breve!','warning','🔜')">✏️ Editar</button>
+        <button class="btn btn-ghost" style="background:var(--sky);color:var(--muted)" onclick="goTo('location-setup')">📍 Atualizar local</button>
+      </div>
+    </div>
+
+    <div class="perfil-sections">
+      <!-- Conquistas -->
+      <div class="perfil-section">
+        <h3>🏆 Conquistas</h3>
+        <div class="achievement">
+          <div class="achievement-icon">🌱</div>
+          <div class="achievement-info">
+            <div class="achievement-name">Primeiro Voto</div>
+            <div class="achievement-desc">Votou pela primeira vez numa proposta</div>
+          </div>
+          <div class="achievement-date">Hoje</div>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">🌳</div>
+          <div class="achievement-info">
+            <div class="achievement-name">Defensor Verde</div>
+            <div class="achievement-desc">Votou em 5 propostas diferentes</div>
+          </div>
+          <div class="achievement-date">Esta semana</div>
+        </div>
+        <div class="achievement" style="opacity:0.4">
+          <div class="achievement-icon">🏆</div>
+          <div class="achievement-info">
+            <div class="achievement-name">Influenciador</div>
+            <div class="achievement-desc">Sua proposta chegou a 100 votos</div>
+          </div>
+          <div class="achievement-date" style="color:var(--muted)">🔒 Bloqueado</div>
+        </div>
+        <div class="achievement" style="opacity:0.4">
+          <div class="achievement-icon">🦋</div>
+          <div class="achievement-info">
+            <div class="achievement-name">Agente da Mudança</div>
+            <div class="achievement-desc">Uma proposta sua foi enviada ao governo</div>
+          </div>
+          <div class="achievement-date" style="color:var(--muted)">🔒 Bloqueado</div>
+        </div>
+      </div>
+
+      <!-- Atividade -->
+      <div class="perfil-section">
+        <h3>📊 Atividade</h3>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Propostas criadas</span><strong>1</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:10%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Votos dados</span><strong id="perfil-votes-bar">0</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Impacto estimado (árvores)</span><strong>0</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:5%"></div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <h4 style="font-size:14px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">Configurações</h4>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="showToast('Notificações em breve!','warning','🔜')" style="justify-content:flex-start">🔔 Notificações do bairro</button>
+            <button class="btn btn-outline btn-sm" onclick="showToast('Relatório em breve!','warning','🔜')" style="justify-content:flex-start">📊 Exportar meu relatório</button>
+            <button class="btn btn-sm" style="background:#fee2e2;color:#c0392b;border:none;cursor:pointer;justify-content:flex-start;padding:8px 16px;border-radius:50px;font-family:var(--font-body);font-size:12px;font-weight:600" onclick="logout()">🚪 Sair da conta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  // Override goTo to show/hide navbar
+  const _goTo = goTo;
+  goTo = function(page) {
+    const navbar = document.getElementById('main-navbar');
+    const publicPages = ['login', 'location-setup'];
+    if (publicPages.includes(page)) {
+      navbar.classList.add('hidden');
+    } else {
+      navbar.classList.remove('hidden');
+    }
+    _goTo(page);
+  };
+</script>
+</body>
+</html>
+
