@@ -6,69 +6,28 @@ const App = {
   filters: { status: 'all', bairro: 'all' },
 };
 
-// ===== MOCK DATA =====
-const mockProposals = [
-  {
-    id: 1, title: 'Arborização da Av. Central',
-    desc: 'A Avenida Central está completamente exposta ao sol. A temperatura chega a 42°C no asfalto durante o verão. Propomos plantio de 18 ipês-amarelos ao longo da calçada.',
-    location: 'Av. Central, 1500 – Serra/ES', bairro: 'Centro',
-    tags: ['Ipê-amarelo', 'Calçada', 'Alta prioridade'],
-    votes: 247, userVote: null, status: 'votacao',
-    author: { name: 'Maria Silva', initials: 'MS' },
-    ia: { cost: 'R$ 12.400', trees: 18, cooling: '3,2°C', time: '24 meses', species: 'Ipê-amarelo (Handroanthus albus)' },
-    emoji: '🌳', createdAt: '2 dias atrás', photo: null
-  },
-  {
-    id: 2, title: 'Praça da Esperança – Revitalização',
-    desc: 'A praça perdeu todas as árvores velhas e agora é uma ilha de calor. Queremos replantar com espécies nativas do ES para trazer de volta pássaros e sombra.',
-    location: 'Praça da Esperança – Carapina', bairro: 'Carapina',
-    tags: ['Espécies nativas', 'Praça', 'Biodiversidade'],
-    votes: 189, userVote: null, status: 'aprovada',
-    author: { name: 'João Pereira', initials: 'JP' },
-    ia: { cost: 'R$ 34.800', trees: 42, cooling: '5,1°C', time: '36 meses', species: 'Jequitibá-rosa, Pau-brasil, Mutamba' },
-    emoji: '🌿', createdAt: '5 dias atrás', photo: null
-  },
-  {
-    id: 3, title: 'Escola Estadual Sem Sombra',
-    desc: 'Os alunos sofrem no recreio com o calor intenso. A escola não tem uma única árvore no pátio. Precisamos de árvores de crescimento rápido.',
-    location: 'R. das Flores, 220 – Nova Almeida', bairro: 'Nova Almeida',
-    tags: ['Escola', 'Crescimento rápido', 'Urgente'],
-    votes: 312, userVote: null, status: 'votacao',
-    author: { name: 'Ana Costa', initials: 'AC' },
-    ia: { cost: 'R$ 8.600', trees: 12, cooling: '2,8°C', time: '18 meses', species: 'Nim indiano, Tipuana, Sibipirunas' },
-    emoji: '🏫', createdAt: '1 dia atrás', photo: null
-  },
-  {
-    id: 4, title: 'Corredor Verde – Rua dos Pinheiros',
-    desc: 'Rua residencial com alto fluxo de pedestres e nenhuma arborização. Temperatura 6°C acima das ruas arborizadas vizinhas. Proposta de corredor verde contínuo.',
-    location: 'R. dos Pinheiros – Jardim Carapina', bairro: 'Jardim Carapina',
-    tags: ['Corredor verde', 'Pedestre', 'Clima urbano'],
-    votes: 156, userVote: null, status: 'analise',
-    author: { name: 'Carlos Ramos', initials: 'CR' },
-    ia: { cost: 'R$ 21.200', trees: 28, cooling: '4,6°C', time: '30 meses', species: 'Amendoeira, Oiti, Quaresmeira' },
-    emoji: '🌲', createdAt: '1 semana atrás', photo: null
-  },
-  {
-    id: 5, title: 'Estacionamento do Supermercado Sem Sombra',
-    desc: 'O estacionamento do supermercado central é uma chapa de metal no verão. Carros ficam a 65°C internamente. Precisamos de ilhas de vegetação.',
-    location: 'Av. Talma Rodrigues Ribeiro – Serra', bairro: 'Centro',
-    tags: ['Comércio', 'Ilha verde', 'Temperatura'],
-    votes: 98, userVote: null, status: 'votacao',
-    author: { name: 'Lucia Ferreira', initials: 'LF' },
-    ia: { cost: 'R$ 15.800', trees: 22, cooling: '3,9°C', time: '20 meses', species: 'Paineira, Ficus, Pata-de-vaca' },
-    emoji: '🌴', createdAt: '3 dias atrás', photo: null
-  },
-  {
-    id: 6, title: 'Marginal do Rio Jacaraípe',
-    desc: 'A marginal do rio está degradada. Replantio de mata ciliar vai proteger o rio, reduzir erosão e criar um parque linear de lazer para a comunidade.',
-    location: 'Marginal Rio Jacaraípe – Jacaraípe', bairro: 'Jacaraípe',
-    tags: ['Mata ciliar', 'Rio', 'Parque linear'],
-    votes: 421, userVote: null, status: 'aprovada',
-    author: { name: 'Roberto Souza', initials: 'RS' },
-    ia: { cost: 'R$ 87.500', trees: 150, cooling: '6,8°C', time: '48 meses', species: 'Caliandra, Ingá, Embaúba, Mutamba' },
-    emoji: '🏞️', createdAt: '2 semanas atrás', photo: null
+// ===== API HELPERS =====
+const API_URL = 'http://localhost:3000';
+
+async function apiFetch(endpoint, options = {}) {
+  const token = localStorage.getItem('inova_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+  
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: { ...headers, ...options.headers }
+  });
+  
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro na requisição');
   }
-];
+  
+  return response.json();
+}
 
 // ===== TOAST NOTIFICATIONS =====
 function showToast(message, type = 'success', icon = '✅') {
@@ -108,27 +67,37 @@ function goTo(page) {
 }
 
 // ===== AUTH =====
-function login(e) {
+async function login(e) {
   e.preventDefault();
   const email = document.getElementById('login-email').value;
   const pass = document.getElementById('login-pass').value;
   if (!email || !pass) { showToast('Preencha todos os campos', 'error', '❌'); return; }
 
-  // Simulate login
   const btn = document.getElementById('login-btn');
   btn.textContent = 'Entrando...';
   btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = 'Entrar na plataforma →';
-    btn.disabled = false;
-    App.user = { name: 'Você', email, initials: email[0].toUpperCase(), bairro: 'Serra Centro', cidade: 'Serra, ES' };
-    App.proposals = JSON.parse(JSON.stringify(mockProposals));
+
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: pass })
+    });
+    
+    localStorage.setItem('inova_token', data.token);
+    localStorage.setItem('inova_user', JSON.stringify(data.user));
+    App.user = data.user;
+    
     showToast('Bem-vindo ao VilaVerde! 🌱', 'success');
     goTo('dashboard');
-  }, 1200);
+  } catch (error) {
+    showToast(error.message, 'error', '❌');
+  } finally {
+    btn.textContent = 'Entrar na plataforma →';
+    btn.disabled = false;
+  }
 }
 
-function register(e) {
+async function register(e) {
   e.preventDefault();
   const name = document.getElementById('reg-name').value;
   const email = document.getElementById('reg-email').value;
@@ -138,18 +107,31 @@ function register(e) {
   const regBtn = document.getElementById('reg-btn');
   regBtn.textContent = 'Criando conta...';
   regBtn.disabled = true;
-  setTimeout(() => {
+
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password: pass })
+    });
+    
+    localStorage.setItem('inova_token', data.token);
+    localStorage.setItem('inova_user', JSON.stringify(data.user));
+    App.user = data.user;
+    
+    showToast('Conta criada! Bem-vindo, ' + name + '! 🌿', 'success');
+    goTo('location-setup'); // Go to location setup after registration
+  } catch (error) {
+    showToast(error.message, 'error', '❌');
+  } finally {
     regBtn.textContent = '🌱 Criar minha conta';
     regBtn.disabled = false;
-    App.user = { name, email, initials: name[0].toUpperCase(), bairro: 'Serra Centro', cidade: 'Serra, ES' };
-    App.proposals = JSON.parse(JSON.stringify(mockProposals));
-    showToast('Conta criada! Bem-vindo, ' + name + '! 🌿', 'success');
-    goTo('dashboard');
-  }, 1200);
+  }
 }
 
 function logout() {
   App.user = null;
+  localStorage.removeItem('inova_token');
+  localStorage.removeItem('inova_user');
   goTo('login');
   showToast('Até logo! 👋', 'success');
 }
@@ -167,100 +149,123 @@ function updateNavbarUser() {
 }
 
 // ===== LOCATION SETUP =====
-function saveLocation() {
+async function saveLocation() {
   const bairro = document.getElementById('loc-bairro').value;
   const cidade = document.getElementById('loc-cidade').value;
   const cep = document.getElementById('loc-cep').value;
 
   if (!bairro || !cidade) { showToast('Informe seu bairro e cidade', 'warning', '⚠️'); return; }
 
-  App.user.bairro = bairro;
-  App.user.cidade = cidade;
+  try {
+    const data = await apiFetch('/auth/location', {
+      method: 'PUT',
+      body: JSON.stringify({ bairro, cidade })
+    });
+    
+    App.user = data.user;
+    localStorage.setItem('inova_user', JSON.stringify(data.user));
+    localStorage.setItem('inova_token', data.token);
 
-  // Update UI safely
-  const locBadge = document.querySelector('.location-badge');
-  const userAvatar = document.querySelector('.user-avatar');
-  const greeting = document.getElementById('dashboard-greeting');
-  if (locBadge) locBadge.innerHTML = '📍 ' + bairro + ', ' + cidade;
-  if (userAvatar) userAvatar.textContent = App.user.initials;
-  if (greeting) greeting.textContent = 'Olá, ' + App.user.name.split(' ')[0] + '! 🌱';
+    updateNavbarUser();
 
-  showToast(`Localização salva: ${bairro}, ${cidade}`, 'success', '📍');
-  goTo('dashboard');
+    showToast(`Localização salva: ${bairro}, ${cidade}`, 'success', '📍');
+    goTo('dashboard');
+  } catch (error) {
+    showToast(error.message, 'error', '❌');
+  }
 }
 
 // ===== PROPOSALS =====
-function renderProposals() {
+async function renderProposals() {
   const grid = document.getElementById('proposals-grid');
   if (!grid) return;
 
-  let filtered = App.proposals;
-  if (App.filters.status !== 'all') filtered = filtered.filter(p => p.status === App.filters.status);
-  if (App.filters.bairro !== 'all' && App.user?.bairro) {
-    filtered = filtered.filter(p => p.bairro === App.user.bairro || App.filters.bairro === 'all');
-  }
+  try {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px">Carregando propostas...</div>';
+    
+    const params = new URLSearchParams();
+    if (App.filters.status !== 'all') params.append('status', App.filters.status);
+    
+    const proposals = await apiFetch(`/proposals?${params.toString()}`);
+    App.proposals = proposals; // Save to state for modal usage
+    
+    let filtered = proposals;
+    if (App.filters.bairro !== 'all' && App.user?.bairro) {
+      filtered = filtered.filter(p => p.bairro === App.user.bairro || App.filters.bairro === 'all');
+    }
 
-  const statusLabels = { votacao: ['Em Votação', 'badge-blue'], aprovada: ['Aprovada ✓', 'badge-green'], analise: ['Em Análise', 'badge-yellow'] };
+    const statusLabels = { votacao: ['Em Votação', 'badge-blue'], aprovada: ['Aprovada ✓', 'badge-green'], analise: ['Em Análise', 'badge-yellow'] };
 
-  grid.innerHTML = filtered.map(p => {
-    const [statusLabel, statusClass] = statusLabels[p.status] || ['Pendente', 'badge-yellow'];
-    const voteUpClass = p.userVote === 'up' ? 'voted' : '';
-    const voteDownClass = p.userVote === 'down' ? 'voted' : '';
-    return `
-    <div class="proposal-card" onclick="openProposal(${p.id})">
-      <div class="proposal-img">
-        <span class="proposal-img-placeholder">${p.emoji}</span>
-        <div class="proposal-status"><span class="badge ${statusClass}">${statusLabel}</span></div>
-      </div>
-      <div class="proposal-body">
-        <div class="proposal-location">📍 ${p.location}</div>
-        <h3 class="proposal-title">${p.title}</h3>
-        <p class="proposal-desc">${p.desc}</p>
-        <div class="proposal-tags">
-          ${p.tags.map(t => `<span class="badge badge-green">${t}</span>`).join('')}
+    grid.innerHTML = filtered.map(p => {
+      const [statusLabel, statusClass] = statusLabels[p.status] || ['Pendente', 'badge-yellow'];
+      const voteUpClass = p.userVote === 'up' ? 'voted' : '';
+      const voteDownClass = p.userVote === 'down' ? 'voted' : '';
+      return `
+      <div class="proposal-card" onclick="openProposal(${p.id})">
+        <div class="proposal-img">
+          ${p.photo ? `<img src="${API_URL}${p.photo}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-md) var(--radius-md) 0 0;">` : `<span class="proposal-img-placeholder">${p.emoji}</span>`}
+          <div class="proposal-status"><span class="badge ${statusClass}">${statusLabel}</span></div>
         </div>
-        <div class="vote-bar" onclick="event.stopPropagation()">
-          <div class="vote-count">${p.votes}</div>
-          <div style="flex:1">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">votos da comunidade</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,(p.votes/500)*100)}%"></div></div>
+        <div class="proposal-body">
+          <div class="proposal-location">📍 ${p.location}</div>
+          <h3 class="proposal-title">${p.title}</h3>
+          <p class="proposal-desc">${p.desc}</p>
+          <div class="proposal-tags">
+            ${p.tags.map(t => `<span class="badge badge-green">${t}</span>`).join('')}
           </div>
-          <button class="vote-btn vote-up ${voteUpClass}" onclick="vote(${p.id},'up')">👍 Apoiar</button>
-          <button class="vote-btn vote-down ${voteDownClass}" onclick="vote(${p.id},'down')">👎</button>
-        </div>
-        <div class="proposal-meta">
-          <div class="proposal-author">
-            <div class="author-avatar">${p.author.initials}</div>
-            <span>${p.author.name} · ${p.createdAt}</span>
+          <div class="vote-bar" onclick="event.stopPropagation()">
+            <div class="vote-count">${p.votes}</div>
+            <div style="flex:1">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">votos da comunidade</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,(p.votes/500)*100)}%"></div></div>
+            </div>
+            <button class="vote-btn vote-up ${voteUpClass}" onclick="vote(${p.id},'up')">👍 Apoiar</button>
+            <button class="vote-btn vote-down ${voteDownClass}" onclick="vote(${p.id},'down')">👎</button>
           </div>
-          <span class="badge badge-blue">🤖 IA: ${p.ia.cost}</span>
+          <div class="proposal-meta">
+            <div class="proposal-author">
+              <div class="author-avatar">${p.author.initials}</div>
+              <span>${p.author.name} · ${p.createdAt}</span>
+            </div>
+            <span class="badge badge-blue">🤖 IA: ${p.ia.cost}</span>
+          </div>
         </div>
-      </div>
-    </div>`;
-  }).join('');
+      </div>`;
+    }).join('');
 
-  if (!filtered.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
-      <div style="font-size:64px;margin-bottom:16px">🌵</div>
-      <div style="font-size:18px;font-weight:600">Nenhuma proposta encontrada</div>
-      <div style="margin-top:8px">Seja o primeiro a propor uma área verde!</div>
-    </div>`;
+    if (!filtered.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
+        <div style="font-size:64px;margin-bottom:16px">🌵</div>
+        <div style="font-size:18px;font-weight:600">Nenhuma proposta encontrada</div>
+        <div style="margin-top:8px">Seja o primeiro a propor uma área verde!</div>
+      </div>`;
+    }
+  } catch (error) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:red;padding:40px">Erro ao carregar propostas: ${error.message}</div>`;
   }
 }
 
-function vote(id, dir) {
-  const p = App.proposals.find(x => x.id === id);
-  if (!p) return;
-  if (p.userVote === dir) { p.userVote = null; p.votes += dir === 'up' ? -1 : 1; }
-  else {
-    if (p.userVote) p.votes += p.userVote === 'up' ? -1 : 1;
-    p.userVote = dir;
-    p.votes += dir === 'up' ? 1 : -1;
+async function vote(id, dir) {
+  try {
+    await apiFetch(`/proposals/${id}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ direction: dir })
+    });
+    
+    // Refresh UI
+    if (App.currentPage === 'dashboard') {
+      renderProposals();
+    } else if (App.currentPage === 'votacao') {
+      renderVotacao();
+      // Need to re-fetch full proposals for the modal if it's open, but let's just fetch dashboard state too
+      apiFetch('/proposals').then(data => App.proposals = data);
+    }
+    
+    const msg = dir === 'up' ? 'Voto de apoio registrado! ✅' : 'Voto contra registrado';
+    showToast(msg, 'success', dir === 'up' ? '👍' : '👎');
+  } catch (error) {
+    showToast(error.message, 'error', '❌');
   }
-  renderProposals();
-  renderVotacao();
-  const msg = dir === 'up' ? '✅ Voto de apoio registrado!' : 'Voto contra registrado';
-  showToast(msg, dir === 'up' ? 'success' : 'warning', dir === 'up' ? '👍' : '👎');
 }
 
 function setFilter(type, val) {
@@ -330,32 +335,39 @@ function closeModal() {
 }
 
 // ===== VOTAÇÃO RANKING =====
-function renderVotacao() {
+async function renderVotacao() {
   const list = document.getElementById('ranking-list');
   if (!list) return;
-  const sorted = [...App.proposals].sort((a, b) => b.votes - a.votes);
-  const positions = ['gold', 'silver', 'bronze'];
+  
+  try {
+    list.innerHTML = '<div style="text-align:center;padding:40px">Carregando ranking...</div>';
+    
+    const sorted = await apiFetch('/proposals/ranking');
+    const positions = ['gold', 'silver', 'bronze'];
 
-  list.innerHTML = sorted.map((p, i) => `
-    <div class="ranking-item" onclick="openProposal(${p.id})" style="cursor:pointer">
-      <div class="ranking-position ${positions[i] || ''}">${i + 1}</div>
-      <div class="ranking-info">
-        <div class="ranking-title">${p.emoji} ${p.title}</div>
-        <div class="ranking-location">📍 ${p.location}</div>
-        <div class="ranking-progress">
-          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,(p.votes/500)*100)}%"></div></div>
+    list.innerHTML = sorted.map((p, i) => `
+      <div class="ranking-item" onclick="openProposal(${p.id})" style="cursor:pointer">
+        <div class="ranking-position ${positions[i] || ''}">${i + 1}</div>
+        <div class="ranking-info">
+          <div class="ranking-title">${p.emoji} ${p.title}</div>
+          <div class="ranking-location">📍 ${p.location}</div>
+          <div class="ranking-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,(p.votes/500)*100)}%"></div></div>
+          </div>
+          <div class="ranking-meta">Meta: 500 votos · ${Math.round((p.votes/500)*100)}% concluído · ${p.bairro}</div>
         </div>
-        <div class="ranking-meta">Meta: 500 votos · ${Math.round((p.votes/500)*100)}% concluído · ${p.bairro}</div>
+        <div class="ranking-votes">
+          <div class="votes-big">${p.votes}</div>
+          <div class="votes-label">votos</div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();vote(${p.id},'up')" style="margin-top:8px">
+            ${p.userVote === 'up' ? '✅ Votado' : '👍 Votar'}
+          </button>
+        </div>
       </div>
-      <div class="ranking-votes">
-        <div class="votes-big">${p.votes}</div>
-        <div class="votes-label">votos</div>
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();vote(${p.id},'up')" style="margin-top:8px">
-          ${p.userVote === 'up' ? '✅ Votado' : '👍 Votar'}
-        </button>
-      </div>
-    </div>
-  `).join('');
+    `).join('');
+  } catch (error) {
+    list.innerHTML = `<div style="color:red;padding:20px;text-align:center">Erro ao carregar ranking: ${error.message}</div>`;
+  }
 }
 
 // ===== PERFIL =====
@@ -468,7 +480,7 @@ function runIaAnalysis() {
   }, 2800);
 }
 
-function submitProposal(e) {
+async function submitProposal(e) {
   e.preventDefault();
   const title = document.getElementById('prop-title').value;
   const desc = document.getElementById('prop-desc').value;
@@ -477,30 +489,24 @@ function submitProposal(e) {
 
   if (!title || !desc || !bairro) { showToast('Preencha todos os campos obrigatórios', 'error', '❌'); return; }
 
-  const tipoEmoji = { calcada: '🌳', praca: '🌿', escola: '🏫', via: '🌲', rio: '🏞️' };
+  try {
+    await apiFetch('/proposals', {
+      method: 'POST',
+      body: JSON.stringify({ title, desc, bairro, tipo, photo: uploadedPhotos[0] || null })
+    });
 
-  const newProp = {
-    id: Date.now(), title, desc, bairro,
-    location: `${bairro} – Serra/ES`,
-    tags: [tipo, 'Nova proposta'],
-    votes: 1, userVote: 'up', status: 'votacao',
-    author: { name: App.user.name, initials: App.user.initials },
-    ia: { cost: 'Calculando...', trees: '?', cooling: '?', time: '?', species: 'Análise pendente' },
-    emoji: tipoEmoji[tipo] || '🌱',
-    createdAt: 'agora mesmo', photo: uploadedPhotos[0] || null
-  };
+    document.getElementById('prop-form').reset();
+    uploadedPhotos = [];
+    renderPhotoPreview();
+    document.getElementById('map-pin').style.display = 'none';
+    document.getElementById('map-placeholder').style.display = 'block';
+    document.getElementById('ia-analysis-panel').style.display = 'none';
 
-  App.proposals.unshift(newProp);
-
-  document.getElementById('prop-form').reset();
-  uploadedPhotos = [];
-  renderPhotoPreview();
-  document.getElementById('map-pin').style.display = 'none';
-  document.getElementById('map-placeholder').style.display = 'block';
-  document.getElementById('ia-analysis-panel').style.display = 'none';
-
-  showToast('Proposta enviada com sucesso! 🌱', 'success', '🎉');
-  goTo('dashboard');
+    showToast('Proposta enviada com sucesso! 🌱', 'success', '🎉');
+    goTo('dashboard');
+  } catch (error) {
+    showToast(error.message, 'error', '❌');
+  }
 }
 
 // ===== LOCATION AUTO-FILL =====
@@ -521,8 +527,16 @@ function autofillCEP() {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  // Default state
-  goTo('login');
+  // Check auth
+  const savedUser = localStorage.getItem('inova_user');
+  const token = localStorage.getItem('inova_token');
+  
+  if (savedUser && token) {
+    App.user = JSON.parse(savedUser);
+    goTo('dashboard');
+  } else {
+    goTo('login');
+  }
 
   // Filter chips
   document.querySelectorAll('[data-filter]').forEach(btn => {
