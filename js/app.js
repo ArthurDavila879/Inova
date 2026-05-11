@@ -203,7 +203,7 @@ async function renderProposals() {
       return `
       <div class="proposal-card" onclick="openProposal(${p.id})">
         <div class="proposal-img">
-          ${p.photo ? `<img src="${API_URL}${p.photo}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-md) var(--radius-md) 0 0;">` : `<span class="proposal-img-placeholder">${p.emoji}</span>`}
+          ${p.photo ? `<img src="${p.photo.startsWith('http') ? p.photo : API_URL + p.photo}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-md) var(--radius-md) 0 0;">` : `<span class="proposal-img-placeholder">${p.emoji}</span>`}
           <div class="proposal-status"><span class="badge ${statusClass}">${statusLabel}</span></div>
         </div>
         <div class="proposal-body">
