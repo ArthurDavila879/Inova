@@ -8,14 +8,23 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
-const SECRET_KEY = 'super_secret_inova_key'; // In production, use env var
+const PORT = process.env.PORT || 3000;
+const SECRET_KEY = process.env.SECRET_KEY || 'super_secret_inova_key';
+
+// Demo user — funciona mesmo quando o SQLite é resetado no Render
+const DEMO_USER = {
+  id: 1,
+  name: 'João Demo',
+  email: 'joao@serra.es.br',
+  password: '123456', // comparação direta, sem hash
+  initials: 'J',
+  bairro: 'Serra Centro',
+  cidade: 'Serra, ES',
+};
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-// Serve static files from current directory
 app.use(express.static('.'));
-// Create uploads directory if it doesn't exist
 if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
   fs.mkdirSync(path.join(__dirname, 'uploads'));
 }
@@ -71,7 +80,6 @@ async function initDb() {
     // Column might already exist
   }
 
-  // Seed mock data if table is empty
   const count = await db.get('SELECT COUNT(*) as c FROM proposals');
   if (count.c === 0) {
     const mockProposals = [
@@ -89,8 +97,7 @@ async function initDb() {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [p.title, p.desc, p.bairro, 'calcada', p.location, JSON.stringify(p.tags), p.status, 1, p.author_name, p.author_initials, JSON.stringify(p.ia), p.emoji, p.created_at, p.photo]
       );
-      // Give them some votes so ranking is interesting
-      const votesToAdd = Math.floor(p.votes / 2); // Simulating votes
+      const votesToAdd = Math.floor(p.votes / 2);
       for (let i = 0; i < votesToAdd; i++) {
         await db.run('INSERT OR IGNORE INTO user_votes (user_id, proposal_id, direction) VALUES (?, ?, ?)', [i + 100, result.lastID, 'up']);
       }
@@ -98,7 +105,6 @@ async function initDb() {
   }
 }
 
-// Middleware for auth
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -111,7 +117,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Optional auth to get user_id if logged in, but not block if not
 function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -132,12 +137,12 @@ app.post('/auth/register', async (req, res) => {
     const { name, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const initials = name ? name[0].toUpperCase() : 'U';
-    
+
     const result = await db.run(
       'INSERT INTO users (name, email, password, bairro, cidade) VALUES (?, ?, ?, ?, ?)',
       [name, email, hashedPassword, 'Serra Centro', 'Serra, ES']
     );
-    
+
     const token = jwt.sign({ id: result.lastID, name, email, initials, bairro: 'Serra Centro', cidade: 'Serra, ES' }, SECRET_KEY);
     res.json({ token, user: { id: result.lastID, name, email, initials, bairro: 'Serra Centro', cidade: 'Serra, ES' } });
   } catch (error) {
@@ -151,6 +156,14 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // ── Demo user: funciona mesmo quando o SQLite é resetado no Render ──
+    if (email === DEMO_USER.email && password === DEMO_USER.password) {
+      const { password: _, ...safeUser } = DEMO_USER;
+      const token = jwt.sign(safeUser, SECRET_KEY);
+      return res.json({ token, user: safeUser });
+    }
+
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) return res.status(400).json({ error: 'Usuário não encontrado' });
 
@@ -168,12 +181,18 @@ app.post('/auth/login', async (req, res) => {
 app.put('/auth/location', authenticateToken, async (req, res) => {
   try {
     const { bairro, cidade } = req.body;
+
+    // Demo user: atualiza apenas o token, sem tocar no banco
+    if (req.user.id === DEMO_USER.id) {
+      const updatedUser = { ...req.user, bairro, cidade };
+      const token = jwt.sign(updatedUser, SECRET_KEY);
+      return res.json({ token, user: updatedUser });
+    }
+
     await db.run('UPDATE users SET bairro = ?, cidade = ? WHERE id = ?', [bairro, cidade, req.user.id]);
-    
     const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
     const initials = user.name ? user.name[0].toUpperCase() : 'U';
     const token = jwt.sign({ id: user.id, name: user.name, email: user.email, initials, bairro: user.bairro, cidade: user.cidade }, SECRET_KEY);
-    
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, initials, bairro: user.bairro, cidade: user.cidade } });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -187,24 +206,23 @@ app.get('/proposals', optionalAuth, async (req, res) => {
     const { status } = req.query;
     let query = 'SELECT p.*, (SELECT SUM(CASE WHEN direction = "up" THEN 1 WHEN direction = "down" THEN -1 ELSE 0 END) FROM user_votes WHERE proposal_id = p.id) as votes FROM proposals p';
     const params = [];
-    
+
     if (status && status !== 'all') {
       query += ' WHERE p.status = ?';
       params.push(status);
     }
-    
+
     query += ' ORDER BY p.id DESC';
-    
+
     const proposals = await db.all(query, params);
-    
-    // Format to match frontend structure
+
     const formatted = await Promise.all(proposals.map(async (p) => {
       let userVote = null;
       if (req.user) {
         const vote = await db.get('SELECT direction FROM user_votes WHERE user_id = ? AND proposal_id = ?', [req.user.id, p.id]);
         if (vote) userVote = vote.direction;
       }
-      
+
       return {
         id: p.id,
         title: p.title,
@@ -222,7 +240,7 @@ app.get('/proposals', optionalAuth, async (req, res) => {
         photo: p.photo || null
       };
     }));
-    
+
     res.json(formatted);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -233,7 +251,7 @@ app.get('/proposals/ranking', optionalAuth, async (req, res) => {
   try {
     const query = 'SELECT p.*, (SELECT SUM(CASE WHEN direction = "up" THEN 1 WHEN direction = "down" THEN -1 ELSE 0 END) FROM user_votes WHERE proposal_id = p.id) as votes FROM proposals p ORDER BY votes DESC NULLS LAST';
     const proposals = await db.all(query);
-    
+
     const formatted = await Promise.all(proposals.map(async (p) => {
       let userVote = null;
       if (req.user) {
@@ -250,7 +268,7 @@ app.get('/proposals/ranking', optionalAuth, async (req, res) => {
         emoji: p.emoji
       };
     }));
-    
+
     res.json(formatted);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -260,16 +278,15 @@ app.get('/proposals/ranking', optionalAuth, async (req, res) => {
 app.post('/proposals', authenticateToken, async (req, res) => {
   try {
     const { title, desc, bairro, tipo } = req.body;
-    
+
     const tipoEmoji = { calcada: '🌳', praca: '🌿', escola: '🏫', via: '🌲', rio: '🏞️' };
     const emoji = tipoEmoji[tipo] || '🌱';
     const location = `${bairro} - Serra/ES`;
     const tags = JSON.stringify([tipo, 'Nova proposta']);
     const createdAt = new Date().toLocaleDateString('pt-BR');
-    
+
     let photoPath = null;
     if (req.body.photo) {
-      // Decode base64 and save
       const base64Data = req.body.photo.replace(/^data:image\/\w+;base64,/, "");
       const ext = req.body.photo.split(';')[0].match(/jpeg|png|gif/)[0];
       const filename = `photo_${Date.now()}.${ext}`;
@@ -277,13 +294,12 @@ app.post('/proposals', authenticateToken, async (req, res) => {
       photoPath = `/uploads/${filename}`;
     }
 
-    // Simplified IA logic for backend
     const tipoData = {
       calcada: { trees: 12, cost: 'R$ 13.000', cooling: '2,5°C', time: '18 meses', species: 'Ipê-amarelo' },
-      praca: { trees: 25, cost: 'R$ 35.000', cooling: '4,0°C', time: '36 meses', species: 'Jequitibá' },
-      escola: { trees: 8, cost: 'R$ 9.500', cooling: '2,0°C', time: '12 meses', species: 'Nim indiano' },
-      via: { trees: 18, cost: 'R$ 22.000', cooling: '3,0°C', time: '24 meses', species: 'Paineira' },
-      rio: { trees: 70, cost: 'R$ 80.000', cooling: '5,0°C', time: '48 meses', species: 'Embaúba' },
+      praca:   { trees: 25, cost: 'R$ 35.000', cooling: '4,0°C', time: '36 meses', species: 'Jequitibá' },
+      escola:  { trees: 8,  cost: 'R$ 9.500',  cooling: '2,0°C', time: '12 meses', species: 'Nim indiano' },
+      via:     { trees: 18, cost: 'R$ 22.000', cooling: '3,0°C', time: '24 meses', species: 'Paineira' },
+      rio:     { trees: 70, cost: 'R$ 80.000', cooling: '5,0°C', time: '48 meses', species: 'Embaúba' },
     };
     const ia = JSON.stringify(tipoData[tipo] || tipoData['calcada']);
 
@@ -293,7 +309,6 @@ app.post('/proposals', authenticateToken, async (req, res) => {
       [title, desc, bairro, tipo, location, tags, 'votacao', req.user.id, req.user.name, req.user.initials, ia, emoji, createdAt, photoPath]
     );
 
-    // Initial upvote from author
     await db.run('INSERT INTO user_votes (user_id, proposal_id, direction) VALUES (?, ?, ?)', [req.user.id, result.lastID, 'up']);
 
     res.status(201).json({ id: result.lastID });
@@ -305,24 +320,20 @@ app.post('/proposals', authenticateToken, async (req, res) => {
 app.post('/proposals/:id/vote', authenticateToken, async (req, res) => {
   try {
     const proposalId = req.params.id;
-    const { direction } = req.body; // 'up' or 'down'
+    const { direction } = req.body;
     const userId = req.user.id;
 
-    // Check if vote exists
     const existingVote = await db.get('SELECT direction FROM user_votes WHERE user_id = ? AND proposal_id = ?', [userId, proposalId]);
 
     if (existingVote) {
       if (existingVote.direction === direction) {
-        // Toggle off
         await db.run('DELETE FROM user_votes WHERE user_id = ? AND proposal_id = ?', [userId, proposalId]);
         res.json({ message: 'Vote removed' });
       } else {
-        // Switch direction
         await db.run('UPDATE user_votes SET direction = ? WHERE user_id = ? AND proposal_id = ?', [direction, userId, proposalId]);
         res.json({ message: 'Vote updated' });
       }
     } else {
-      // New vote
       await db.run('INSERT INTO user_votes (user_id, proposal_id, direction) VALUES (?, ?, ?)', [userId, proposalId, direction]);
       res.json({ message: 'Vote recorded' });
     }
