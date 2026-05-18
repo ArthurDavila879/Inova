@@ -7,8 +7,7 @@ const App = {
 };
 
 // ===== API HELPERS =====
-const API_URL = 'https://inova-x6vv.onrender.com';
-
+const API_URL = 'http://localhost:8080';
 async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('inova_token');
   const headers = {
@@ -101,8 +100,8 @@ async function register(e) {
   e.preventDefault();
   const name = document.getElementById('reg-name').value;
   const email = document.getElementById('reg-email').value;
-  const pass = document.getElementById('reg-pass').value;
-  if (!name || !email || !pass) { showToast('Preencha todos os campos', 'error', '❌'); return; }
+  const password = document.getElementById('reg-pass').value;
+  if (!name || !email || !password) { showToast('Preencha todos os campos', 'error', '❌'); return; }
 
   const regBtn = document.getElementById('reg-btn');
   regBtn.textContent = 'Criando conta...';
@@ -111,7 +110,7 @@ async function register(e) {
   try {
     const data = await apiFetch('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password: pass })
+      body: JSON.stringify({ name, email, password })
     });
     
     localStorage.setItem('inova_token', data.token);
