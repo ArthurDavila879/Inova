@@ -7,7 +7,7 @@ const App = {
 };
 
 // ===== API HELPERS =====
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://inova-x6vv.onrender.com/';
 
 async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('inova_token');
