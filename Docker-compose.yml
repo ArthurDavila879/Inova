@@ -1,0 +1,58 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: inova
+      MYSQL_USER: inova
+      MYSQL_PASSWORD: ${DB_PASSWORD:-inova_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-inova_root_pass}
+    volumes:
+      - inova_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u inova inova -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  inova-api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # O host aqui DEVE ser 'mysql' (nome do serviço do container)
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/inova?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: inova
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-inova_pass}
+      JWT_SECRET: ${JWT_SECRET:-inova-local-development-only-secret-change-before-deploy}
+      APP_UPLOAD_DIR: /app/uploads
+    volumes:
+      - inova_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      inova-api:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  inova_mysql_data:
+  inova_uploads:

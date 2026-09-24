@@ -1,0 +1,17 @@
+name: Verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test frontend/tests/app.test.cjs
+      - run: docker compose -f Docker-compose.yml up -d --build --wait
+      - run: python3 scripts/smoke.py
+      - if: failure()
+        run: docker compose -f Docker-compose.yml logs --no-color
+      - if: always()
+        run: docker compose -f Docker-compose.yml down

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VilaVerde</title>
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+</head>
+<body>
+<div class="theme-toolbar">
+  <label for="theme-select">Tema</label>
+  <select id="theme-select">
+    <option value="light">Claro</option>
+    <option value="dark">Escuro</option>
+    <option value="system">Sistema</option>
+  </select>
+</div>
+<!-- ========== TOAST CONTAINER ========== -->
+<div id="toast-container"></div>
+
+<!-- ========== MODAL OVERLAY ========== -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal" id="proposal-modal"></div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: LOGIN                                       -->
+<!-- ================================================ -->
+<div id="page-login" class="page active">
+  <div class="login-visual">
+    <div class="login-visual-content">
+      <div class="login-eyebrow">ARBORIZAÇÃO URBANA · VILAVERDE</div>
+      <h1>Verde pra<br/>Todo Mundo</h1>
+      <p>Plataforma colaborativa para mapear, propor e votar em projetos de arborização urbana. Juntos pelo clima da nossa cidade.</p>
+      <div class="login-stats">
+        <div class="stat-item"><div class="stat-number" data-target="2341">0</div><div class="stat-label">Propostas</div></div>
+        <div class="stat-item"><div class="stat-number" data-target="18400">0</div><div class="stat-label">Votos</div></div>
+        <div class="stat-item"><div class="stat-number" data-target="847">0</div><div class="stat-label">Aprovadas</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-form-side">
+    <div class="login-logo">
+      <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c-8-1-15 2-15 8a7 7 0 0 0 7 7c6 0 9-7 8-15Z"/><path d="M4 21 15 10"/></svg>
+      <span>VilaVerde</span>
+      <div class="login-logo-dot" style="width:8px;height:8px;background:var(--leaf);border-radius:50%;margin-left:4px"></div>
+    </div>
+
+    <h1 class="login-title">Bem-vindo de<br/>volta.</h1>
+    <p class="login-sub">Acesse sua conta ou crie uma nova gratuitamente</p>
+
+    <div class="login-form">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">Entrar</button>
+        <button class="tab-btn" data-tab="register">Criar conta</button>
+      </div>
+
+      <!-- LOGIN PANEL -->
+      <div class="form-panel active" id="panel-login">
+        <div class="social-login">
+          <button class="social-btn" onclick="showToast('Login com Google em breve!','warning','info')">
+             Google
+          </button>
+          <button class="social-btn" onclick="showToast('Login com Facebook em breve!','warning','info')">
+             Facebook
+          </button>
+        </div>
+        <div class="divider">ou com email</div>
+
+        <form onsubmit="login(event)">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <div class="password-toggle">
+              <input type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password" />
+              <button type="button" class="toggle-eye" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </div>
+          </div>
+          <a href="#" class="forgot-link">Esqueceu a senha?</a>
+          <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
+            Entrar na plataforma →
+          </button>
+          <p class="terms-text">Ao entrar, você concorda com nossos <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.</p>
+        </form>
+      </div>
+
+      <!-- REGISTER PANEL -->
+      <div class="form-panel" id="panel-register">
+        <form onsubmit="register(event)">
+          <div class="form-group">
+            <label>Nome completo</label>
+            <input type="text" id="reg-name" placeholder="Seu nome" />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="reg-email" placeholder="seu@email.com" />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <div class="password-toggle">
+              <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" />
+              <button type="button" class="toggle-eye" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-leaf btn-lg" id="reg-btn" style="width:100%">
+             Criar minha conta
+          </button>
+          <p class="terms-text">Ao criar sua conta, você concorda com nossos <a href="#">Termos de Uso</a>.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: LOCATION SETUP                             -->
+<!-- ================================================ -->
+<div id="page-location-setup" class="page">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--green-deep),var(--green-mid));padding:40px 20px">
+    <div style="background:var(--surface);border-radius:32px;padding:48px;max-width:540px;width:100%;box-shadow:var(--shadow-lg)">
+      <div style="text-align:center;margin-bottom:40px">
+        <div style="font-size:64px;margin-bottom:16px"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg></div>
+        <h1 style="font-family:var(--font-display);font-size:30px;color:var(--heading);margin-bottom:8px">Onde você mora?</h1>
+        <p style="color:var(--muted);line-height:1.5">Precisamos saber sua localização para mostrar as propostas do seu bairro e conectar você à sua comunidade.</p>
+      </div>
+
+      <div class="location-steps">
+        <div class="step-item done"><div class="step-circle">✓</div><div class="step-label">Conta</div></div>
+        <div class="step-item active"><div class="step-circle">2</div><div class="step-label">Localização</div></div>
+        <div class="step-item"><div class="step-circle">3</div><div class="step-label">Explorar</div></div>
+      </div>
+
+      <div class="form-group">
+        <label>CEP (busca automática)</label>
+        <input type="text" id="loc-cep" placeholder="00000-000" maxlength="9"
+          oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2')" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Bairro *</label>
+          <input type="text" id="loc-bairro" placeholder="Seu bairro" />
+        </div>
+        <div class="form-group">
+          <label>Cidade *</label>
+          <input type="text" id="loc-cidade" placeholder="Sua cidade" value="Serra" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select>
+          <option value="ES" selected>Espírito Santo</option>
+          <option value="RJ">Rio de Janeiro</option>
+          <option value="SP">São Paulo</option>
+          <option value="MG">Minas Gerais</option>
+        </select>
+      </div>
+
+      <div style="background:var(--sky);border-radius:var(--radius-sm);padding:16px;margin-bottom:24px;font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:flex-start">
+        
+        <span>Sua localização é usada apenas para mostrar propostas do seu bairro. Nunca compartilhamos seus dados pessoais.</span>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="saveLocation()" style="width:100%">
+        Continuar para o app →
+      </button>
+      <button class="btn btn-ghost" onclick="App.user.bairro='Serra Centro';goTo('dashboard')"
+        style="width:100%;margin-top:10px;background:transparent;color:var(--muted);border:none;font-size:13px;cursor:pointer">
+        Pular por enquanto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- NAVBAR (shared, shown after login)               -->
+<!-- ================================================ -->
+<nav class="navbar hidden" id="main-navbar">
+  <a class="navbar-brand" href="#">
+    <div class="logo-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c-8-1-15 2-15 8a7 7 0 0 0 7 7c6 0 9-7 8-15Z"/><path d="M4 21 15 10"/></svg></div>
+    <span>VilaVerde</span>
+  </a>
+  <div class="navbar-nav">
+    <button class="nav-btn active" data-page="dashboard" onclick="goTo('dashboard')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg> <span>Início</span></button>
+    <button class="nav-btn" data-page="nova-proposta" onclick="goTo('nova-proposta')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> <span>Nova Proposta</span></button>
+    <button class="nav-btn" data-page="votacao" onclick="goTo('votacao')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-3 5 6-4 3-5-6Z"/><path d="M6 11H4l-1 9h18l-1-9h-2M9 15h6"/></svg> <span>Votação</span></button>
+    <button class="nav-btn" data-page="perfil" onclick="goTo('perfil')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg> <span>Perfil</span></button>
+  </div>
+  <div class="navbar-user">
+    <div class="location-badge"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg> <span id="nav-location">Serra, ES</span></div>
+    <div class="user-avatar" onclick="goTo('perfil')" title="Meu Perfil">?</div>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<!-- ================================================ -->
+<!-- PAGE: DASHBOARD                                  -->
+<!-- ================================================ -->
+<div id="page-dashboard" class="page">
+  <div class="page-header">
+    <h1 id="dashboard-greeting">Olá! </h1>
+    <p>Explore e vote nas propostas de arborização da sua cidade</p>
+  </div>
+
+  <div class="page-content">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon green"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-7 8h3l-4 6h16l-4-6h3L12 3Z"/><path d="M12 17v4"/></svg></div>
+        <div class="stat-info"><div class="value">1.247</div><div class="label">Árvores propostas</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0ZM12 8v10"/></svg></div>
+        <div class="stat-info"><div class="value">-3,8°C</div><div class="label">Redução média estimada</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-3 5 6-4 3-5-6Z"/><path d="M6 11H4l-1 9h18l-1-9h-2M9 15h6"/></svg></div>
+        <div class="stat-info"><div class="value">18.423</div><div class="label">Votos registrados</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon earth"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4H3Zm2 3v8m7-8v8m7-8v8M3 21h18"/></svg></div>
+        <div class="stat-info"><div class="value">12</div><div class="label">Enviadas ao governo</div></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="section-header" style="margin-bottom:16px">
+      <h2 class="section-title">Propostas da Comunidade</h2>
+      <button class="btn btn-leaf" onclick="goTo('nova-proposta')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nova Proposta</button>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:24px">
+      <button class="filter-chip active" data-filter="status" data-value="all">Todas</button>
+      <button class="filter-chip" data-filter="status" data-value="votacao">Em Votação</button>
+      <button class="filter-chip" data-filter="status" data-value="aprovada">Aprovadas</button>
+      <button class="filter-chip" data-filter="status" data-value="analise">Em Análise</button>
+    </div>
+
+    <div class="proposals-grid" id="proposals-grid"></div>
+
+    <!-- IMPACT BANNER -->
+    <div style="background:linear-gradient(135deg,var(--green-deep),var(--green-mid));border-radius:var(--radius);padding:32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div>
+        <h3 style="font-family:var(--font-display);color:white;font-size:22px;margin-bottom:8px"> Mobilização da comunidade</h3>
+        <p style="color:rgba(255,255,255,0.75);font-size:14px">Meta de mobilização: 500 votos. O envio à prefeitura ainda não está disponível.</p>
+      </div>
+      <div style="text-align:center;background:rgba(255,255,255,0.12);border-radius:16px;padding:20px 32px">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:900;color:var(--leaf)">421</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6)">votos na proposta líder</div>
+        <div style="font-size:12px;color:var(--leaf);margin-top:4px">79 votos p/ a meta! </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: NOVA PROPOSTA                              -->
+<!-- ================================================ -->
+<div id="page-nova-proposta" class="page">
+  <div class="page-header">
+    <h1>Nova Proposta</h1>
+    <p>Mapeie um local e envie sua proposta para a comunidade votar</p>
+  </div>
+
+  <div class="nova-proposta-layout">
+    <!-- MAIN FORM -->
+    <div>
+      <form id="prop-form" onsubmit="submitProposal(event)">
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--heading);margin-bottom:20px;font-size:18px"> Dados da Proposta</h3>
+
+          <div class="form-group">
+            <label>Título da proposta *</label>
+            <input type="text" id="prop-title" placeholder="Ex: Arborização da Av. das Rosas" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="form-group">
+              <label>Bairro *</label>
+              <input type="text" id="prop-bairro" placeholder="Nome do bairro" value="" />
+            </div>
+            <div class="form-group">
+              <label>Tipo de área</label>
+              <select id="prop-tipo">
+                <option value="calcada">Calçada / Rua</option>
+                <option value="praca">Praça / Parque</option>
+                <option value="escola">Escola / Equipamento público</option>
+                <option value="via">Via expressa / Avenida</option>
+                <option value="rio">Margem de rio / Área verde</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Descrição detalhada *</label>
+            <textarea id="prop-desc" placeholder="Descreva o problema (calor excessivo, falta de sombra...) e como a arborização pode ajudar. Quanto mais detalhes, melhor!"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Endereço aproximado</label>
+            <input type="text" id="prop-address" placeholder="Rua, número, referência..." />
+          </div>
+        </div>
+
+        <!-- PHOTO UPLOAD -->
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--heading);margin-bottom:20px;font-size:18px"> Foto do Local</h3>
+          <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+            <div class="upload-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3V7Z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <strong>Arraste a foto ou clique para selecionar</strong>
+            <p>Uma foto JPG ou PNG de até 5 MB</p>
+          </div>
+          <input type="file" id="file-input" accept="image/png,image/jpeg" style="display:none"
+            onchange="handlePhotoUpload(this.files)" />
+          <div class="photos-preview" id="photos-preview"></div>
+        </div>
+
+        <!-- MAP PICKER -->
+        <div class="card" style="padding:28px;margin-bottom:24px">
+          <h3 style="font-family:var(--font-display);color:var(--heading);margin-bottom:20px;font-size:18px"> Marque o Local no Mapa</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Clique no mapa para marcar o local exato. As coordenadas são salvas junto com a proposta.</p>
+          <div class="map-picker" id="map-picker">
+            <div id="leaflet-map" style="width:100%;height:100%"></div>
+          </div>
+          <p id="map-coords-label" style="font-size:12px;color:var(--muted);margin:-8px 0 16px"></p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--sky);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted)">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0ZM12 8v10"/></svg> Temperatura atual na área: <strong style="color:var(--dark)">35,2°C</strong>
+            </div>
+            <div style="background:var(--sky);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted)">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-7 8h3l-4 6h16l-4-6h3L12 3Z"/><path d="M12 17v4"/></svg> Índice de verde atual: <strong style="color:var(--danger-text)">4,2%</strong> (baixo)
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">
+           Enviar Proposta para a Comunidade
+        </button>
+      </form>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div>
+      <!-- IA ANALYSIS -->
+      <div class="sidebar-panel" style="margin-bottom:20px">
+        <h3 class="sidebar-panel-title"> Estimativa demonstrativa</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5">
+          Cada categoria possui valores de referência. Eles são demonstrativos e precisam de avaliação técnica antes de qualquer execução.
+        </p>
+        <button class="btn btn-primary" style="width:100%" onclick="runIaAnalysis()">
+           Sobre a estimativa
+        </button>
+      </div>
+
+      <div id="ia-analysis-panel" style="display:none;margin-bottom:20px"></div>
+
+      <!-- TIPS -->
+      <div class="sidebar-panel" style="background:var(--sky)">
+        <h3 class="sidebar-panel-title"> Dicas para uma boa proposta</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>Inclua uma foto clara para ajudar a comunidade a avaliar o local</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0ZM12 8v10"/></svg></span><span>Mencione a temperatura sentida e o impacto no dia a dia das pessoas</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span>Propostas em locais de uso coletivo (escolas, praças) recebem mais votos</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:13px;align-items:flex-start">
+            <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4H3Zm2 3v8m7-8v8m7-8v8M3 21h18"/></svg></span><span>Meta de mobilização: 500 votos. Envio à prefeitura em desenvolvimento.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: VOTAÇÃO                                    -->
+<!-- ================================================ -->
+<div id="page-votacao" class="page">
+  <div class="page-header">
+    <h1>Ranking de Propostas</h1>
+    <p>Acompanhe as propostas mais apoiadas. Vote e faça a diferença!</p>
+  </div>
+
+  <div class="votacao-layout">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:28px;flex-wrap:wrap">
+      <div style="background:linear-gradient(135deg,var(--green-bright),var(--leaf));border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:white">500 votos</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.8)">Meta de mobilização</div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--heading)">12</div>
+          <div style="font-size:13px;color:var(--muted)">Propostas enviadas</div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--radius);padding:16px 24px;flex:1;min-width:200px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--sun)">3</div>
+          <div style="font-size:13px;color:var(--muted)">Quase na meta!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2 class="section-title"> Ranking Geral</h2>
+      <div style="font-size:13px;color:var(--muted)">Atualizado em tempo real</div>
+    </div>
+
+    <div class="ranking-list" id="ranking-list"></div>
+
+    <!-- HOW IT WORKS -->
+    <div style="margin-top:40px;background:linear-gradient(135deg,var(--green-deep),var(--green-mid));border-radius:var(--radius);padding:32px;color:white">
+      <h3 style="font-family:var(--font-display);font-size:22px;margin-bottom:20px">Como funciona o processo?</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-weight:600;margin-bottom:6px">1. Proposta</div>
+          <div style="font-size:13px;opacity:0.7">Cidadão mapeia e descreve a área</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-weight:600;margin-bottom:6px">2. Estimativa</div>
+          <div style="font-size:13px;opacity:0.7">Referências de custo, espécies e impacto</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-weight:600;margin-bottom:6px">3. Votação</div>
+          <div style="font-size:13px;opacity:0.7">Comunidade vota e prioriza</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:rgba(255,255,255,0.1);border-radius:12px">
+          <div style="font-weight:600;margin-bottom:6px">4. Mobilização</div>
+          <div style="font-size:13px;opacity:0.7">Acompanhe o apoio da comunidade</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- PAGE: PERFIL                                     -->
+<!-- ================================================ -->
+<div id="page-perfil" class="page">
+  <div class="page-header">
+    <h1>Meu Perfil</h1>
+    <p>Gerencie seus dados e veja suas contribuições</p>
+  </div>
+
+  <div class="perfil-layout">
+    <div class="perfil-header">
+      <div class="perfil-avatar" id="perfil-initials">?</div>
+      <div class="perfil-info">
+        <h2 id="perfil-name">Carregando...</h2>
+        <p id="perfil-email" style="color:var(--muted)"></p>
+        <p id="perfil-location" style="color:var(--muted);margin-top:4px"></p>
+        <div class="perfil-badges" style="margin-top:12px">
+          <span class="badge badge-green"> Cidadão Verde</span>
+          <span class="badge badge-blue"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-3 5 6-4 3-5-6Z"/><path d="M6 11H4l-1 9h18l-1-9h-2M9 15h6"/></svg> <span id="perfil-votes">0</span> votos dados</span>
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-outline" onclick="openEditProfile()"> Editar</button>
+        <button class="btn btn-ghost" style="background:var(--sky);color:var(--muted)" onclick="goTo('location-setup')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg> Atualizar local</button>
+      </div>
+    </div>
+
+    <div class="perfil-sections">
+      <!-- Conquistas -->
+      <div class="perfil-section">
+        <h3> Conquistas</h3>
+        <div id="perfil-achievements"></div>
+      </div>
+
+      <!-- Atividade -->
+      <div class="perfil-section">
+        <h3> Atividade</h3>
+        <div style="display:flex;flex-direction:column;gap:16px" id="perfil-activity-bars">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Propostas criadas</span><strong id="perfil-created-count">0</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="perfil-created-bar" style="width:0%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Votos dados</span><strong id="perfil-votes-bar">0</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="perfil-votes-fill" style="width:0%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+              <span>Impacto estimado (árvores)</span><strong id="perfil-trees-count">0</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="perfil-trees-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <h4 style="font-size:14px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">Configurações</h4>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="showToast('Notificações em breve!','warning','info')" style="justify-content:flex-start"> Notificações do bairro</button>
+            <button class="btn btn-outline btn-sm" onclick="showToast('Relatório em breve!','warning','info')" style="justify-content:flex-start"> Exportar meu relatório</button>
+            <button class="btn btn-sm" style="background:var(--danger-surface);color:var(--danger-text);border:none;cursor:pointer;justify-content:flex-start;padding:8px 16px;border-radius:50px;font-family:var(--font-body);font-size:12px;font-weight:600" onclick="logout()"> Sair da conta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/app.js"></script>
+<script>
+  // Override goTo to show/hide navbar
+  const _goTo = goTo;
+  goTo = function(page) {
+    const navbar = document.getElementById('main-navbar');
+    const publicPages = ['login', 'location-setup'];
+    if (publicPages.includes(page)) {
+      navbar.classList.add('hidden');
+    } else {
+      navbar.classList.remove('hidden');
+    }
+    _goTo(page);
+  };
+</script>
+</body>
+</html>

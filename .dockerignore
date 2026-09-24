@@ -1,0 +1,10 @@
+.git
+.env
+bin
+target
+uploads
+output
+tmp
+node_modules
+frontend/server.js
+**/database.sqlite*

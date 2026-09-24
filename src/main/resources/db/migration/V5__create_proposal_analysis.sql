@@ -1,0 +1,1 @@
+CREATE TABLE proposal_analysis (id BIGINT AUTO_INCREMENT PRIMARY KEY,proposal_id BIGINT NOT NULL UNIQUE,estimated_cost VARCHAR(100),trees_required INT,temperature_reduction VARCHAR(100),implementation_time VARCHAR(100),species VARCHAR(500),created_at DATETIME NOT NULL,CONSTRAINT fk_analysis_proposal FOREIGN KEY(proposal_id) REFERENCES proposals(id) ON DELETE CASCADE);
